@@ -12,8 +12,19 @@ if not firebase_admin._apps:
 # 전역 지역 설정 (서울)
 options.set_global_options(region="asia-northeast3")
 
+from fastapi.middleware.cors import CORSMiddleware
+
 # FastAPI 앱 생성
 app = FastAPI()
+
+# CORS 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/api/health")
 def health_check():
@@ -31,8 +42,9 @@ def fastapi_handler(req: https_fn.Request) -> https_fn.Response:
             "type": "http",
             "method": req.method,
             "path": req.path,
+            "raw_path": req.path.encode(),
             "headers": [(k.lower().encode(), v.encode()) for k, v in req.headers.items()],
-            "query_string": req.query_string or b"",
+            "query_string": req.query_string.encode() if isinstance(req.query_string, str) else (req.query_string or b""),
         }
 
         # ASGI receive 함수
