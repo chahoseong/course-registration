@@ -1,9 +1,16 @@
 from firebase_functions import https_fn, options
 import firebase_admin
 from firebase_admin import initialize_app
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 import json
+
+from models.course import Course, CourseCreate
+from models.enrollment import Enrollment, EnrollmentCreate
+from core.dependencies import get_course_service, get_enrollment_service
+from services.course_service import CourseService
+from services.enrollment_service import EnrollmentService, EnrollmentError
 
 # Firebase Admin 초기화 (중복 방지)
 if not firebase_admin._apps:
@@ -11,8 +18,6 @@ if not firebase_admin._apps:
 
 # 전역 지역 설정 (서울)
 options.set_global_options(region="asia-northeast3")
-
-from fastapi.middleware.cors import CORSMiddleware
 
 # FastAPI 앱 생성
 app = FastAPI()
@@ -30,12 +35,32 @@ app.add_middleware(
 def health_check():
     return {"status": "ok"}
 
+@app.get("/api/courses")
+def list_courses(service: CourseService = Depends(get_course_service)):
+    return service.get_all_courses()
+
+@app.get("/api/courses/{course_id}")
+def get_course(course_id: str, service: CourseService = Depends(get_course_service)):
+    course = service.get_course(course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    return course
+
+from pydantic import BaseModel
+
+class EnrollmentRequest(BaseModel):
+    student_id: str
+    course_id: str
+
+@app.post("/api/enrollments")
+def enroll_student(req: EnrollmentRequest, service: EnrollmentService = Depends(get_enrollment_service)):
+    try:
+        return service.enroll_student(req.student_id, req.course_id)
+    except EnrollmentError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @https_fn.on_request()
 def fastapi_handler(req: https_fn.Request) -> https_fn.Response:
-    """
-    수동 ASGI 어댑터 구현
-    Firebase Functions v2에서 FastAPI를 실행하기 위해 ASGI 프로토콜을 직접 구현
-    """
     try:
         # ASGI scope 구성
         asgi_request = {
@@ -47,14 +72,11 @@ def fastapi_handler(req: https_fn.Request) -> https_fn.Response:
             "query_string": req.query_string.encode() if isinstance(req.query_string, str) else (req.query_string or b""),
         }
 
-        # ASGI receive 함수
         async def receive():
             return {"type": "http.request", "body": req.get_data() or b"", "more_body": False}
 
-        # 응답 데이터 수집
         response_body, response_headers, response_status = [], [], 200
 
-        # ASGI send 함수
         async def send(message):
             nonlocal response_body, response_headers, response_status
             if message["type"] == "http.response.start":
@@ -63,13 +85,11 @@ def fastapi_handler(req: https_fn.Request) -> https_fn.Response:
             elif message["type"] == "http.response.body":
                 response_body.append(message.get("body", b""))
 
-        # FastAPI를 asyncio로 실행
         async def run_asgi():
             await app(asgi_request, receive, send)
 
         asyncio.run(run_asgi())
 
-        # 응답 조합
         full_body = b"".join(response_body)
         headers_dict = {
             k.decode() if isinstance(k, bytes) else k: v.decode() if isinstance(v, bytes) else v
