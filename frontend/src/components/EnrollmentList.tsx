@@ -17,7 +17,7 @@ export default function EnrollmentList() {
   useEffect(() => {
     if (!user) return;
 
-    const q = query(collection(db, 'enrollments'), where('student_id', '==', user.uid));
+    const q = query(collection(db, 'enrollments'), where('student_ids', 'array-contains', user.uid));
     
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       const enrollmentData: EnrollmentWithCourse[] = [];
@@ -78,7 +78,7 @@ export default function EnrollmentList() {
                </div>
                <span className="text-xs text-gray-400 flex items-center gap-1">
                  <Clock className="w-3 h-3" />
-                 {new Date(item.timestamp).toLocaleDateString()}
+                 {item.timestamp && (item.timestamp as any).toDate ? (item.timestamp as any).toDate().toLocaleDateString() : new Date(item.timestamp).toLocaleDateString()}
                </span>
              </div>
              {item.course?.start_time && item.course?.end_time && (

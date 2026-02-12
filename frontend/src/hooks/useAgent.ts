@@ -7,6 +7,7 @@ export const useAgent = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const sendMessage = useCallback(async (text: string) => {
+    console.log('[useAgent] sendMessage start', { text });
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -19,6 +20,7 @@ export const useAgent = () => {
 
     try {
       const responseText = await sendMessageToAgent(text);
+      console.log('[useAgent] sendMessage success', { responseText });
       
       const agentMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -29,6 +31,7 @@ export const useAgent = () => {
 
       setMessages((prev) => [...prev, agentMessage]);
     } catch (error) {
+      console.error('[useAgent] sendMessage failed', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'model',

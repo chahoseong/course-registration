@@ -6,3 +6,5 @@ pytest
 httpx
 pytest-mock
 flask-cors
+openai
+python-dotenv

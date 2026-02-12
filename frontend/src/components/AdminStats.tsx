@@ -3,11 +3,10 @@ import axios from 'axios';
 import { auth } from '../firebase';
 import { Users, BookOpen, UserCheck, TrendingUp } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const getStats = async () => {
     const token = await auth.currentUser?.getIdToken();
-    const response = await axios.get(`${API_URL}/api/stats`, {
+    const response = await axios.get('/api/stats', {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;

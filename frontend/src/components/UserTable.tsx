@@ -4,11 +4,10 @@ import { auth } from '../firebase';
 import type { User } from '../types';
 import { Shield, ShieldAlert, User as UserIcon } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const getUsers = async (): Promise<User[]> => {
     const token = await auth.currentUser?.getIdToken();
-    const response = await axios.get(`${API_URL}/api/users`, {
+    const response = await axios.get('/api/users', {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
@@ -16,7 +15,7 @@ const getUsers = async (): Promise<User[]> => {
 
 const updateUserRole = async ({ uid, role }: { uid: string, role: string }) => {
     const token = await auth.currentUser?.getIdToken();
-    const response = await axios.put(`${API_URL}/api/users/${uid}/role?role=${role}`, {}, {
+    const response = await axios.put(`/api/users/${uid}/role?role=${role}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;

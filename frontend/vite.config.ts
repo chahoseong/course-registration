@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:5001/course-registration-711a4/asia-northeast3/fastapi_handler',
+        target: 'http://127.0.0.1:5000',
         changeOrigin: true,
       }
     }

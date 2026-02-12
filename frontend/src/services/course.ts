@@ -2,11 +2,7 @@ import axios from 'axios';
 import { auth } from '../firebase';
 import type { Course } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-const api = axios.create({
-  baseURL: API_URL,
-});
+const api = axios.create();
 
 api.interceptors.request.use(async (config) => {
   const user = auth.currentUser;

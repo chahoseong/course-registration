@@ -19,7 +19,7 @@ export interface Course {
 
 export interface Enrollment {
   id: string;
-  student_id: string;
+  student_ids: string[];
   course_id: string;
   timestamp: string; // ISO string
 }

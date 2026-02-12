@@ -35,6 +35,7 @@ export default function ChatWindow() {
 
   const handleSend = () => {
     if (!input.trim()) return;
+    console.log('[chat-ui] handleSend called', { input });
     sendMessage(input);
     setInput('');
   };

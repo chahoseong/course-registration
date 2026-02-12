@@ -1,4 +1,5 @@
 from typing import List, Optional
+from google.cloud.firestore import FieldFilter
 from repositories.base import BaseRepository
 from models.course import Course
 from models.user import User
@@ -62,18 +63,39 @@ class FirestoreEnrollmentRepository(BaseRepository[Enrollment]):
 
     def list(self) -> List[Enrollment]:
         docs = self.collection.stream()
-        return [Enrollment(id=doc.id, **doc.to_dict()) for doc in docs]
+        results = []
+        for doc in docs:
+            data = doc.to_dict()
+            if "id" in data:
+                del data["id"]
+            results.append(Enrollment(id=doc.id, **data))
+        return results
 
     def get(self, id: str) -> Optional[Enrollment]:
         doc = self.collection.document(id).get()
         if doc.exists:
-            return Enrollment(id=doc.id, **doc.to_dict())
+            data = doc.to_dict()
+            if "id" in data:
+                del data["id"]
+            return Enrollment(id=doc.id, **data)
         return None
 
     def save(self, data: Enrollment) -> Enrollment:
-        self.collection.document(data.id).set(data.model_dump())
+        # id는 document key로 사용되므로 저장하지 않음 (중복 방지)
+        self.collection.document(data.id).set(data.model_dump(exclude={"id"}))
         return data
 
     def delete(self, id: str) -> bool:
         self.collection.document(id).delete()
         return True
+
+    def get_by_student_id(self, student_id: str) -> List[Enrollment]:
+        # 'student_ids' 배열에 student_id가 포함된 문서 검색
+        docs = self.collection.where(filter=FieldFilter("student_ids", "array_contains", student_id)).stream()
+        results = []
+        for doc in docs:
+            data = doc.to_dict()
+            if "id" in data:
+                del data["id"]
+            results.append(Enrollment(id=doc.id, **data))
+        return results
