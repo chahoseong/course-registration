@@ -16,10 +16,14 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Services
 export const auth = getAuth(app);
-const firestoreDatabaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID || "course-registration";
+
+const rawDatabaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID || "course-registration";
+const firestoreDatabaseId = rawDatabaseId.trim();
+
 if (!import.meta.env.VITE_FIREBASE_DATABASE_ID) {
   console.warn("[firebase] VITE_FIREBASE_DATABASE_ID is missing. Falling back to 'course-registration'.");
 }
+
 export const db = getFirestore(app, firestoreDatabaseId);
 
 // Connect to Emulators in local environment

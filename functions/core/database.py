@@ -7,5 +7,5 @@ def get_db():
         # 에뮬레이터 환경에서 호스트 설정이 필요한 경우 환경 변수 사용
         firebase_admin.initialize_app()
     
-    db_id = os.getenv("FIREBASE_DATABASE_ID", "course-registration")
+    db_id = os.getenv("FIREBASE_DATABASE_ID", "course-registration").strip()
     return firestore.client(database=db_id)
