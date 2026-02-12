@@ -25,7 +25,7 @@ jobs:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_COURSE_REGISTRATION_711A4 }}
 
       - name: Deploy Cloud Functions and Firestore
-        run: npx firebase-tools deploy --only functions,firestore --project <your-project-id>
+        run: npx firebase-tools deploy --only functions,firestore --project course-registration-711a4
 
       # 3. 프론트엔드 빌드 및 배포
       - name: Install & Build Frontend
