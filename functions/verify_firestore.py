@@ -5,7 +5,9 @@ os.environ["FIRESTORE_EMULATOR_HOST"] = "127.0.0.1:8080"
 project_id = "course-registration-711a4"
 
 def verify():
-    db = firestore.Client(project=project_id)
+    # 환경 변수 또는 직접 지정한 데이터베이스 ID 사용
+    db_id = os.getenv("FIREBASE_DATABASE_ID", "course-registration")
+    db = firestore.Client(project=project_id, database=db_id)
     
     print("--- Firestore Verification ---")
     
