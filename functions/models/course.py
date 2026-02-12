@@ -6,6 +6,9 @@ class CourseBase(BaseModel):
     instructor: str
     max_students: int
     current_count: int = 0
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    description: Optional[str] = None
 
 class CourseCreate(CourseBase):
     pass

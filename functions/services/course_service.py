@@ -12,8 +12,11 @@ class CourseService:
     def get_course(self, id: str) -> Optional[Course]:
         return self.repo.get(id)
 
-    def create_course(self, course_data: CourseCreate) -> Course:
-        # CourseCreate를 Course 모델로 변환 (ID는 저장 시 생성됨)
+    def create_course(self, course_data: CourseCreate | Course) -> Course:
+        if isinstance(course_data, Course):
+            return self.repo.save(course_data)
+        
+        # CourseCreate를 Course 모델로 변환
         new_course = Course(
             id="", # Repository에서 생성 예정
             **course_data.model_dump()
