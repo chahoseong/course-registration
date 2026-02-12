@@ -1,5 +1,5 @@
 import firebase_admin
-from firebase_admin import firestore
+from google.cloud import firestore
 import os
 
 def get_db():
@@ -8,4 +8,8 @@ def get_db():
         firebase_admin.initialize_app()
     
     db_id = os.getenv("FIREBASE_DATABASE_ID", "course-registration").strip()
-    return firestore.client(database=db_id)
+    
+    # Cloud Functions 환경 변수 또는 직접 지정
+    project_id = os.getenv("GCLOUD_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT") or "course-registration-711a4"
+
+    return firestore.Client(project=project_id, database=db_id)
