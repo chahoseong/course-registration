@@ -17,7 +17,7 @@
         "firebase-debug.*.log",
         "*.local"
       ],
-      "predepoly": [ 
+      "predeploy": [ 
         "cd functions && python3.13 -m venv venv && . venv/bin/activate && pip install -r requirements.txt" 
       ],
       "runtime": "python313"
@@ -32,7 +32,7 @@
     ],
     "rewrites": [
       {
-        "source": "api/**",
+        "source": "/api/**",
         "function": "fastapi_handler",
         "region": "asia-northeast3"
       },
