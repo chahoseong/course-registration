@@ -21,7 +21,9 @@ const rawDatabaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID || "course-regis
 const firestoreDatabaseId = rawDatabaseId.trim();
 
 if (!import.meta.env.VITE_FIREBASE_DATABASE_ID) {
-  console.warn("[firebase] VITE_FIREBASE_DATABASE_ID is missing. Falling back to 'course-registration'.");
+  console.warn("[firebase] VITE_FIREBASE_DATABASE_ID is missing. Falling back to default:", firestoreDatabaseId);
+} else {
+  console.info("[firebase] VITE_FIREBASE_DATABASE_ID loaded from env:", firestoreDatabaseId);
 }
 
 export const db = getFirestore(app, firestoreDatabaseId);
