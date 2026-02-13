@@ -24,7 +24,12 @@ if not firebase_admin._apps:
     initialize_app()
 
 # 지역 지정 설정 (서울)
-options.set_global_options(region="asia-northeast3")
+options.set_global_options(
+    region="asia-northeast3",
+    max_instances=10,       # 최대 10개 인스턴스 제한 (DDoS 방어)
+    memory=options.MemoryOption.MB_256, # 최소 메모리 사용
+    timeout_sec=30,         # 30초 초과 시 강제 종료
+)
 
 # FastAPI 앱 생성
 app = FastAPI()
