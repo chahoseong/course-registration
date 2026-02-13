@@ -1,15 +1,20 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export const useSpeech = () => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   // STT (Speech to Text)
   const startListening = useCallback(() => {
     if (!('webkitSpeechRecognition' in window)) {
       alert('Browser does not support speech recognition.');
       return;
+    }
+
+    if (recognitionRef.current) {
+        return; // Already initialized or running
     }
 
     const recognition = new (window as any).webkitSpeechRecognition();
@@ -19,6 +24,7 @@ export const useSpeech = () => {
 
     recognition.onstart = () => {
       setIsListening(true);
+      setTranscript(''); // Clear previous transcript on new start
     };
 
     recognition.onresult = (event: any) => {
@@ -28,22 +34,24 @@ export const useSpeech = () => {
 
     recognition.onend = () => {
       setIsListening(false);
+      recognitionRef.current = null;
     };
 
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error', event.error);
       setIsListening(false);
+      recognitionRef.current = null;
     };
 
+    recognitionRef.current = recognition;
     recognition.start();
   }, []);
 
   const stopListening = useCallback(() => {
-    // recognition.stop() logic is tricky without keeping the instance ref, 
-    // but usually startListening handles one-shot. 
-    // If we want continuous listening, we need to adjust.
-    // For now, let's assume it stops automatically or on end.
-    setIsListening(false);
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      // onend will handle state update
+    }
   }, []);
 
   // TTS (Text to Speech)
