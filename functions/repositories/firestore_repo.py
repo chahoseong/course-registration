@@ -45,12 +45,24 @@ class FirestoreUserRepository(BaseRepository[User]):
         # and often omit `uid` in the document body.
         if "displayName" not in data and "name" in data:
             data["displayName"] = data.get("name")
-        data["uid"] = data.get("uid") or doc.id
+        data["uid"] = str(data.get("uid") or doc.id)
+
+        # Normalize unexpected role values to avoid runtime 500s.
+        raw_role = data.get("role")
+        normalized_role = str(raw_role).lower() if raw_role is not None else ""
+        data["role"] = "admin" if normalized_role == "admin" else "student"
+
         return User(**data)
 
     def list(self) -> List[User]:
         docs = self.collection.stream()
-        return [self._to_user(doc) for doc in docs]
+        users: List[User] = []
+        for doc in docs:
+            try:
+                users.append(self._to_user(doc))
+            except Exception as e:
+                print(f"[users] skipped invalid user doc {doc.id}: {e}")
+        return users
 
     def get(self, uid: str) -> Optional[User]:
         doc = self.collection.document(uid).get()

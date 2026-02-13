@@ -7,19 +7,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ChatWindow() {
   const { messages, isProcessing, sendMessage } = useAgent();
-  const { isListening, transcript, setTranscript, startListening, isSpeaking, speak, cancelSpeech } = useSpeech();
+  const { isListening, transcript, setTranscript, startListening, stopListening, isSpeaking, speak, cancelSpeech } = useSpeech();
   const [input, setInput] = useState('');
   const [isTtsEnabled, setIsTtsEnabled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastSpokenMessageId = useRef<string | null>(null);
 
-  // Auto-fill input from speech transcript
+  // Auto-fill input from speech transcript and send
   useEffect(() => {
     if (transcript) {
-      setInput(transcript);
-      // Optional: Auto-send? No, let user confirm.
+      console.log('[chat-ui] Auto-sending speech transcript', { transcript });
+      sendMessage(transcript);
       setTranscript(''); 
     }
-  }, [transcript, setTranscript]);
+  }, [transcript, setTranscript, sendMessage]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -29,8 +30,14 @@ export default function ChatWindow() {
   // Auto-speak new agent messages if TTS is enabled
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.role === 'model' && !isSpeaking && isTtsEnabled) {
+    if (
+      lastMessage?.role === 'model' && 
+      !isSpeaking && 
+      isTtsEnabled && 
+      lastMessage.id !== lastSpokenMessageId.current
+    ) {
        speak(lastMessage.text);
+       lastSpokenMessageId.current = lastMessage.id;
     }
   }, [messages, speak, isSpeaking, isTtsEnabled]);
 
@@ -129,11 +136,11 @@ export default function ChatWindow() {
       <div className="p-4 bg-white border-t border-gray-100">
         <div className="flex items-center gap-2">
           <button
-            onClick={isListening ? () => {} : startListening} // Stop is automatic for one-shot
+            onClick={isListening ? stopListening : startListening}
             className={`p-3 rounded-full transition-colors ${
               isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
-             title="음성 입력"
+             title={isListening ? "음성 입력 중지" : "음성 입력 시작"}
           >
             {isListening ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </button>

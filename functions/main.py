@@ -128,7 +128,11 @@ def get_my_enrollments(uid: str = Depends(get_current_user_uid), service: Enroll
 
 @app.get("/api/users")
 def list_users(service: UserService = Depends(get_user_service)):
-    return service.get_all_users()
+    try:
+        return service.get_all_users()
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @app.put("/api/users/{uid}/role")
 def update_user_role(uid: str, role: str, service: UserService = Depends(get_user_service)):
@@ -225,5 +229,4 @@ def fastapi_handler(req: https_fn.Request) -> https_fn.Response:
             status=500,
             headers={"Content-Type": "application/json"},
         )
-
 
