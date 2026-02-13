@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Send, Mic, Volume2, Square } from 'lucide-react';
+import { Send, Mic, Volume2, Square, VolumeX } from 'lucide-react';
 import { useAgent } from '../hooks/useAgent';
 import { useSpeech } from '../hooks/useSpeech';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +9,7 @@ export default function ChatWindow() {
   const { messages, isProcessing, sendMessage } = useAgent();
   const { isListening, transcript, setTranscript, startListening, isSpeaking, speak, cancelSpeech } = useSpeech();
   const [input, setInput] = useState('');
+  const [isTtsEnabled, setIsTtsEnabled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-fill input from speech transcript
@@ -25,13 +26,13 @@ export default function ChatWindow() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isProcessing]);
 
-  // Auto-speak new agent messages? (Optional per PRD)
+  // Auto-speak new agent messages if TTS is enabled
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.role === 'model' && !isSpeaking) {
-       // speak(lastMessage.text); // Uncomment to enable auto-speak
+    if (lastMessage?.role === 'model' && !isSpeaking && isTtsEnabled) {
+       speak(lastMessage.text);
     }
-  }, [messages, speak, isSpeaking]);
+  }, [messages, speak, isSpeaking, isTtsEnabled]);
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -47,6 +48,13 @@ export default function ChatWindow() {
     }
   };
 
+  const toggleTts = () => {
+    if (isSpeaking) {
+      cancelSpeech();
+    }
+    setIsTtsEnabled(!isTtsEnabled);
+  };
+
   return (
     <div className="flex flex-col h-[600px] w-full max-w-2xl bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100">
       {/* Header */}
@@ -54,11 +62,23 @@ export default function ChatWindow() {
         <h2 className="font-semibold text-lg flex items-center gap-2">
           AI 수강신청 에이전트
         </h2>
-        {isSpeaking && (
-          <button onClick={cancelSpeech} className="p-1 hover:bg-white/20 rounded-full transition">
-             <Volume2 className="animate-pulse w-5 h-5"/>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTts}
+            className={`p-2 rounded-full transition-colors ${
+              isTtsEnabled ? 'bg-white/20 hover:bg-white/30' : 'hover:bg-white/10 opacity-70'
+            }`}
+            title={isTtsEnabled ? "음성 읽어주기 끄기" : "음성 읽어주기 켜기"}
+          >
+            {isTtsEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5 opacity-50" />}
           </button>
-        )}
+          
+          {isSpeaking && (
+            <button onClick={cancelSpeech} className="p-1 hover:bg-white/20 rounded-full transition" title="말하기 중단">
+              <Volume2 className="animate-pulse w-5 h-5 text-yellow-300"/>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Messages Area */}
