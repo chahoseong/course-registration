@@ -226,30 +226,4 @@ def fastapi_handler(req: https_fn.Request) -> https_fn.Response:
             headers={"Content-Type": "application/json"},
         )
 
-@identity_fn.before_user_created()
-def create_user_document(event: identity_fn.AuthBlockingEvent) -> None:
-    """
-    새로운 사용자가 가입할 때 Firestore에 사용자 문서를 생성합니다.
-    (Blocking Function: 사용자 생성 전 실행되지만, 여기서 초기 데이터를 세팅합니다)
-    """
-    try:
-        user_data = {
-            "uid": event.data.uid,
-            "displayName": event.data.display_name or "Unknown",
-            "email": event.data.email,
-            "photoURL": getattr(event.data, "photo_url", None),
-            "role": "student", # 기본 역할 설정
-            "created_at": firestore.SERVER_TIMESTAMP
-        }
-        
-        db_id = os.getenv("FIREBASE_DATABASE_ID", "(default)")
-        # Use google.cloud.firestore directly to specify database
-        if db_id == "(default)":
-            db = google_firestore.Client(project=os.environ.get("GCLOUD_PROJECT"))
-        else:
-            db = google_firestore.Client(project=os.environ.get("GCLOUD_PROJECT"), database=db_id)
-        db.collection("users").document(event.data.uid).set(user_data)
-        print(f"Created user document for {event.data.uid} in db {db_id}")
-        
-    except Exception as e:
-        print(f"Error creating user document: {e}")
+
