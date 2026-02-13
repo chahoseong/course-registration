@@ -38,14 +38,24 @@ class FirestoreUserRepository(BaseRepository[User]):
         self.db = db
         self.collection = self.db.collection("users")
 
+    @staticmethod
+    def _to_user(doc) -> User:
+        data = doc.to_dict() or {}
+        # Legacy auth trigger documents may store `name` instead of `displayName`
+        # and often omit `uid` in the document body.
+        if "displayName" not in data and "name" in data:
+            data["displayName"] = data.get("name")
+        data["uid"] = data.get("uid") or doc.id
+        return User(**data)
+
     def list(self) -> List[User]:
         docs = self.collection.stream()
-        return [User(**doc.to_dict()) for doc in docs]
+        return [self._to_user(doc) for doc in docs]
 
     def get(self, uid: str) -> Optional[User]:
         doc = self.collection.document(uid).get()
         if doc.exists:
-            return User(**doc.to_dict())
+            return self._to_user(doc)
         return None
 
     def save(self, data: User) -> User:

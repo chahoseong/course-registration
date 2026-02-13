@@ -23,26 +23,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           // Firestore에서 사용자 정보(role 포함) 조회
           const userDocRef = doc(db, 'users', firebaseUser.uid);
+          console.log(`[AuthContext] Fetching user doc Path: users/${firebaseUser.uid}`);
           const userDoc = await getDoc(userDocRef);
 
           if (userDoc.exists()) {
+            const userData = userDoc.data();
+            console.log(`[AuthContext] User found in DB. Role: ${userData.role}`, userData);
             setUser({
               uid: firebaseUser.uid,
               email: firebaseUser.email,
               displayName: firebaseUser.displayName,
               photoURL: firebaseUser.photoURL,
-              role: userDoc.data().role as 'student' | 'admin',
+              role: (userData.role as 'student' | 'admin') || 'student',
             });
           } else {
+            console.warn(`[AuthContext] User document not found. Creating new student user.`);
             // 신규 사용자의 경우 Firestore에 기본 정보 저장 (기본 role: student)
             const newUser: User = {
               uid: firebaseUser.uid,
-              email: firebaseUser.email,
               displayName: firebaseUser.displayName,
+              email: firebaseUser.email,
               photoURL: firebaseUser.photoURL,
               role: 'student', // 기본 역할
             };
             await setDoc(userDocRef, newUser);
+            console.log("[AuthContext] New user created with role: student");
             setUser(newUser);
           }
         } catch (error) {

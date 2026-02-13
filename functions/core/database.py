@@ -1,21 +1,22 @@
 import firebase_admin
-from google.cloud import firestore
+from firebase_admin import firestore
 import os
+from google.cloud import firestore as google_firestore
 
 def get_db():
+    # Firebase Admin SDK가 초기화되지 않았다면 초기화
     if not firebase_admin._apps:
-        # 에뮬레이터 환경에서 호스트 설정이 필요한 경우 환경 변수 사용
         firebase_admin.initialize_app()
     
-    raw_db_id = os.getenv("FIREBASE_DATABASE_ID")
-    if raw_db_id is None:
-        db_id = "course-registration"
-        print("[database] FIREBASE_DATABASE_ID not set. Using default:", db_id)
-    else:
-        db_id = raw_db_id.strip()
-        print("[database] FIREBASE_DATABASE_ID loaded from env:", db_id)
+    # 환경 변수에서 데이터베이스 ID 로드 (없으면 기본값 사용)
+    db_id = os.getenv("FIREBASE_DATABASE_ID", "(default)")
+    print(f"[database] Connecting to Firestore DB: {db_id}")
     
-    # Cloud Functions 환경 변수 또는 직접 지정
+    # Project ID 가져오기
     project_id = os.getenv("GCLOUD_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT") or "course-registration-711a4"
 
-    return firestore.Client(project=project_id, database=db_id)
+    # google.cloud.firestore.Client를 직접 사용하여 특정 데이터베이스에 연결
+    # firebase_admin.firestore.client()는 기본적으로 (default) DB를 가져오므로 주의 필요
+    if db_id == "(default)":
+        return google_firestore.Client(project=project_id)
+    return google_firestore.Client(project=project_id, database=db_id)
