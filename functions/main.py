@@ -1,6 +1,6 @@
-﻿from firebase_functions import https_fn, options
+﻿from firebase_functions import https_fn, options, identity_fn
 import firebase_admin
-from firebase_admin import initialize_app
+from firebase_admin import initialize_app, firestore
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
@@ -8,8 +8,9 @@ import json
 import traceback
 import os
 from dotenv import load_dotenv
+from google.cloud import firestore as google_firestore
 
-load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env.custom"))
 
 from models.course import Course, CourseCreate
 from models.enrollment import Enrollment, EnrollmentCreate
@@ -171,7 +172,7 @@ def agent_chat(req: ChatRequest, uid: str = Depends(get_current_user_uid), servi
 
 @https_fn.on_request(
     cors=options.CorsOptions(
-        cors_origins="*",
+        cors_origins=["http://localhost:5173", "http://127.0.0.1:5002", "http://localhost:5002", "course-registration-711a4.web.app", "course-registration-711a4.firebaseapp.com"],
         cors_methods=["get", "post", "put", "delete", "options"]
     )
 )
@@ -219,3 +220,31 @@ def fastapi_handler(req: https_fn.Request) -> https_fn.Response:
             status=500,
             headers={"Content-Type": "application/json"},
         )
+
+@identity_fn.before_user_created()
+def create_user_document(event: identity_fn.AuthBlockingEvent) -> None:
+    """
+    새로운 사용자가 가입할 때 Firestore에 사용자 문서를 생성합니다.
+    (Blocking Function: 사용자 생성 전 실행되지만, 여기서 초기 데이터를 세팅합니다)
+    """
+    try:
+        user_data = {
+            "uid": event.data.uid,
+            "displayName": event.data.display_name or "Unknown",
+            "email": event.data.email,
+            "photoURL": getattr(event.data, "photo_url", None),
+            "role": "student", # 기본 역할 설정
+            "created_at": firestore.SERVER_TIMESTAMP
+        }
+        
+        db_id = os.getenv("FIREBASE_DATABASE_ID", "(default)")
+        # Use google.cloud.firestore directly to specify database
+        if db_id == "(default)":
+            db = google_firestore.Client(project=os.environ.get("GCLOUD_PROJECT"))
+        else:
+            db = google_firestore.Client(project=os.environ.get("GCLOUD_PROJECT"), database=db_id)
+        db.collection("users").document(event.data.uid).set(user_data)
+        print(f"Created user document for {event.data.uid} in db {db_id}")
+        
+    except Exception as e:
+        print(f"Error creating user document: {e}")

@@ -17,21 +17,22 @@ const app = initializeApp(firebaseConfig);
 // Initialize Services
 export const auth = getAuth(app);
 
-const rawDatabaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID || "course-registration";
-const firestoreDatabaseId = rawDatabaseId.trim();
+// Use default DB unless a named DB is explicitly configured.
+const firestoreDatabaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID?.trim();
+const useDefaultDatabase = !firestoreDatabaseId || firestoreDatabaseId === "(default)";
 
-if (!import.meta.env.VITE_FIREBASE_DATABASE_ID) {
-  console.warn("[firebase] VITE_FIREBASE_DATABASE_ID is missing. Falling back to default:", firestoreDatabaseId);
-} else {
-  console.info("[firebase] VITE_FIREBASE_DATABASE_ID loaded from env:", firestoreDatabaseId);
-}
+console.log(
+  `[Firebase] Firestore DB: ${useDefaultDatabase ? "(default)" : firestoreDatabaseId}`
+);
 
-export const db = getFirestore(app, firestoreDatabaseId);
+export const db = useDefaultDatabase
+  ? getFirestore(app)
+  : getFirestore(app, firestoreDatabaseId);
 
 // Connect to Emulators in local environment
-if (window.location.hostname === "localhost") {
-  connectAuthEmulator(auth, "http://localhost:9099");
-  connectFirestoreEmulator(db, "localhost", 8080);
+if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+  connectAuthEmulator(auth, "http://127.0.0.1:9099");
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
   console.log("Connected to Firebase Emulators");
 }
 

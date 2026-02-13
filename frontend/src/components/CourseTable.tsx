@@ -23,6 +23,7 @@ export default function CourseTable() {
     mutationFn: createCourse,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
       setIsModalOpen(false);
       resetForm();
     },
@@ -32,6 +33,7 @@ export default function CourseTable() {
     mutationFn: ({ id, course }: { id: string; course: Partial<Course> }) => updateCourse(id, course),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
       setIsModalOpen(false);
       resetForm();
     },
@@ -41,6 +43,7 @@ export default function CourseTable() {
     mutationFn: deleteCourse,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
     },
   });
 
