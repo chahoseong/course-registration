@@ -75,6 +75,23 @@ class AgentService:
                     },
                 },
             },
+            {
+                "type": "function",
+                "function": {
+                    "name": "cancel_course",
+                    "description": "사용자가 신청한 강의를 취소(철회)합니다. 반드시 get_my_enrollments 결과에서 확인된 ID를 사용해야 합니다.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "course_id": {
+                                "type": "string",
+                                "description": "취소할 강의의 고유 ID.",
+                            },
+                        },
+                        "required": ["course_id"],
+                    },
+                },
+            },
         ]
         
         # System prompt
@@ -89,6 +106,11 @@ class AgentService:
         3. 찾아낸 ID를 사용하여 **반드시 `enroll_course` 도구를 호출**하여 신청을 시도하세요.
         4. 사용자는 강의 ID를 모릅니다. 당신이 `list_courses`로 찾아서 처리해야 합니다.
         5. 수강 신청 완료 후 결과를 정중하게 한국어로 안내하세요.
+        6. **수강 취소 요청 시**:
+           - 먼저 `get_my_enrollments`를 호출하여 사용자가 수강 중인 강의 목록을 확인하세요.
+           - 사용자가 말한 강의명(예: "파이썬")이 수강 목록에 없거나, 여러 개(예: "파이썬 기초", "파이썬 심화")가 있어서 **불확실한 경우**, 
+             **즉시 취소하지 말고 사용자에게 되물어 확인**하세요. (예: "'파이썬 기초'와 '파이썬 심화' 중 어느 것을 취소하시겠습니까?")
+           - 사용자가 정확한 강의명을 말했거나, 수강 목록에서 유일하게 매칭되는 경우에만 `cancel_course`를 호출하세요.
         """
 
         messages = [
@@ -147,6 +169,8 @@ class AgentService:
                     
                     if tool_call.function.name == "enroll_course" and '"status": "success"' in tool_output:
                         enrollment_done = True
+                    if tool_call.function.name == "cancel_course" and '"status": "success"' in tool_output:
+                        enrollment_done = True
                 
                 step += 1
 
@@ -184,6 +208,18 @@ class AgentService:
                     result = self.enrollment_service.enroll_student(user_id, course_id)
                     tool_output = json.dumps(
                         {"status": "success", "message": "수강 신청 완료", "data": result.model_dump()},
+                        ensure_ascii=False,
+                        default=str,
+                    )
+
+            elif function_name == "cancel_course":
+                course_id = function_args.get("course_id")
+                if not course_id:
+                    tool_output = json.dumps({"error": "course_id is required"}, ensure_ascii=False)
+                else:
+                    result = self.enrollment_service.cancel_enrollment(user_id, course_id)
+                    tool_output = json.dumps(
+                        {"status": "success", "message": "수강 취소 완료", "data": result.model_dump()},
                         ensure_ascii=False,
                         default=str,
                     )

@@ -13,19 +13,32 @@ export default function ChatWindow() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastSpokenMessageId = useRef<string | null>(null);
 
-  // Auto-fill input from speech transcript and send
+  const prevIsListening = useRef(false);
+
+  // Auto-fill input from speech transcript
   useEffect(() => {
     if (transcript) {
-      console.log('[chat-ui] Auto-sending speech transcript', { transcript });
-      sendMessage(transcript);
+      setInput(transcript);
       setTranscript(''); 
     }
-  }, [transcript, setTranscript, sendMessage]);
+  }, [transcript, setTranscript]);
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isProcessing]);
+
+  // Send message when listening stops
+  useEffect(() => {
+    if (prevIsListening.current && !isListening) {
+      if (input.trim()) {
+        console.log('[chat-ui] Sending message after speech end', { input });
+        sendMessage(input);
+        setInput('');
+      }
+    }
+    prevIsListening.current = isListening;
+  }, [isListening, input, sendMessage]);
 
   // Auto-speak new agent messages if TTS is enabled
   useEffect(() => {

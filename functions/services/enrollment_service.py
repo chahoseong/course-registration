@@ -58,3 +58,26 @@ class EnrollmentService:
         self.course_repo.save(course)
 
         return enrollment
+
+    def cancel_enrollment(self, student_id: str, course_id: str) -> Enrollment:
+        print(f"Enroll Service: Canceling enrollment for student {student_id} from course {course_id}")
+        
+        # 1. 강의 존재 확인
+        course = self.course_repo.get(course_id)
+        if not course:
+            raise EnrollmentError("Course not found")
+
+        # 2. 수강 신청 문서 확인
+        enrollment = self.enroll_repo.get(course_id)
+        if not enrollment or student_id not in enrollment.student_ids:
+            raise EnrollmentError("Not enrolled in this course")
+
+        # 3. 학생 제거 및 저장
+        enrollment.student_ids.remove(student_id)
+        self.enroll_repo.save(enrollment)
+
+        # 4. 강의 인원 업데이트
+        course.current_count = len(enrollment.student_ids) 
+        self.course_repo.save(course)
+
+        return enrollment
