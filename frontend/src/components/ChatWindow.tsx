@@ -11,6 +11,7 @@ export default function ChatWindow() {
   const [input, setInput] = useState('');
   const [isTtsEnabled, setIsTtsEnabled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastSpokenMessageId = useRef<string | null>(null);
 
   // Auto-fill input from speech transcript
   useEffect(() => {
@@ -29,8 +30,14 @@ export default function ChatWindow() {
   // Auto-speak new agent messages if TTS is enabled
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.role === 'model' && !isSpeaking && isTtsEnabled) {
+    if (
+      lastMessage?.role === 'model' && 
+      !isSpeaking && 
+      isTtsEnabled && 
+      lastMessage.id !== lastSpokenMessageId.current
+    ) {
        speak(lastMessage.text);
+       lastSpokenMessageId.current = lastMessage.id;
     }
   }, [messages, speak, isSpeaking, isTtsEnabled]);
 
